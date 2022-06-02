@@ -1,0 +1,5 @@
+"0","tmp.UTM <- spTransform(tmp, CRS(""+init=epsg:3857""))
+"
+"2","Error in (function (classes, fdef, mtable)  : 
+  unable to find an inherited method for function ‘spTransform’ for signature ‘""sfc_POINT"", ""CRS""’
+"

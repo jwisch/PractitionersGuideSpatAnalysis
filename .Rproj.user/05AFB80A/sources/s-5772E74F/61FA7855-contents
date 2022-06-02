@@ -1,0 +1,70 @@
+## Packages required for this script
+packages = c("tidycensus", "data.table", "ggplot2", "gridExtra",
+             "sf", "maptools", "spatstat", "spdep", "RColorBrewer",
+             "ecespa")
+
+## Now load or install&load all
+package.check <- lapply(
+  packages,
+  FUN = function(x) {
+    if (!require(x, character.only = TRUE)) {
+      install.packages(x, dependencies = TRUE)
+      library(x, character.only = TRUE)
+    }
+  }
+)
+
+participants <- readRDS("../GunViolence_Resilience/GunViolence_Resilience/Data/merged_ADRC_HIV_data.RDS")
+colnames(participants)[4:5] <- c("lat", "lon")
+
+df <- participants[, c("GEOID", "T1BrainAgeGap", "TrueAge", "ADI_NATRANK_19", 
+                       "Sex", "Education", "Race")]
+
+df$T1BrainAgeGap <- round(df$T1BrainAgeGap, 0)
+
+df <- df[with(df, order(GEOID)),]
+
+df_count_per_tract <- data.table(df)[, .N, by = GEOID] #gives number of coordinates per GEOID that I need
+
+metro_region <- get_acs(geography = "tract"
+                        , state = c("MO")
+                        ,
+                        county = c("St. Louis city")
+                        ,
+                        variables = "B19013_001"
+                        ,
+                        geometry = TRUE)
+
+results_list <- list()
+for(i in 1:nrow(df_count_per_tract)){
+  region_to_test <- metro_region[metro_region$GEOID %in% df_count_per_tract$GEOID[i],]
+  rand_pt <- st_sample(metro_region$geometry[[i]], df_count_per_tract$N[i])
+  rand_pt <- do.call(rbind, st_geometry(rand_pt)) %>% 
+    as.data.frame() %>% setNames(c("lon","lat"))
+  
+  results_list[[i]] <- data.frame("GEOID" = rep(df_count_per_tract$GEOID[i], df_count_per_tract$N[i]),
+                                  "lon" = rand_pt$lon,
+                                  "lat" = rand_pt$lat)
+}
+
+
+results <- rbindlist(results_list)
+
+df <- cbind(df, results[, c("lon", "lat")])
+
+saveRDS(df, "./Data/Synthetic_Participant_Data.RDS")
+
+#Checking distribution by plotting it
+participants_count <- data.frame(data.table(df)[, .N, by = GEOID]) 
+participants_poly <- merge(participants_count, 
+                           metro_region[, c("GEOID", "NAME", "geometry")], by = "GEOID", all = TRUE)
+participants_poly <- participants_poly[!duplicated(participants_poly),]
+participants_poly[is.na(participants_poly)] <- 0
+participants_poly <- st_as_sf(participants_poly)
+
+ggplot(participants_poly) + 
+  aes(fill = N) + geom_sf() +
+  xlim(c(-90.32, -90.175)) + ylim(c(38.54, 38.77)) + theme_void() +
+  geom_point(data = participants, aes(x = lon, y = lat, fill = 1), colour = "white") +
+  theme(legend.position = "bottom")  + 
+  ggtitle("St. Louis City Sample Distribution")

@@ -1,0 +1,15 @@
+library(ggplot2)
+
+participants <- readRDS("../GunViolence_Resilience/GunViolence_Resilience/Data/merged_ADRC_HIV_data.RDS")
+participants$highBAG <- mean(participants$T1BrainAgeGap) + 1.5 * sd(participants$T1BrainAgeGap) + participants$TrueAge
+
+ggplot(participants, aes(x = TrueAge, y = T1BrainAge)) + geom_point() + 
+  theme_bw() + geom_abline(slope = 1, intercept = 0, linetype = "solid", colour = "black")+
+  xlim(c(20, 85)) + ylim(c(20, 85)) +
+  xlab("Chronological Age") + ylab("DeepBrainNet Predicted Age")
+
+ggplot(participants, aes(x = TrueAge, y = T1BrainAge)) + geom_point() + 
+  theme_bw() + geom_abline(slope = 1, intercept = 0, linetype = "solid", colour = "black") +
+  geom_line(aes(x = TrueAge, y = highBAG), colour = "red", linetype = "dashed") +
+  xlim(c(20, 85)) + ylim(c(20, 85))+
+  xlab("Chronological Age") + ylab("DeepBrainNet Predicted Age")
