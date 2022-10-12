@@ -18,3 +18,9 @@ spData
 spdep
 RColorBrewer
 ecespa
+dplyr
+httr
+censusr
+raster
+concaveman
+ggpubr

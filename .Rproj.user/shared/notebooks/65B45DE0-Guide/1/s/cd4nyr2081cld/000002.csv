@@ -1,4 +1,0 @@
-"0","#Loading a list of all variables for the chosen year"
-"0","vars <- load_variables(year = 2019,"
-"0","                       dataset = ""acs5"","
-"0","                       cache = TRUE)"
